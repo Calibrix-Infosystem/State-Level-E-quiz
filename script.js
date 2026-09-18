@@ -1,6 +1,6 @@
 // Google Apps Script API endpoints
-const FETCH_API_URL = "YOUR_FETCH_DATA_SCRIPT_WEB_APP_URL";
-const SUBMIT_API_URL = "YOUR_SUBMIT_RESPONSE_SCRIPT_WEB_APP_URL";
+const FETCH_API_URL = "https://script.google.com/macros/s/AKfycbznXOrazKw3gqB_MkTdsUSi9wDdk1u0DODIAgTRYpp3wFkfZguCJfgt6L8AHGqGa8ng/exec";
+const SUBMIT_API_URL = "https://script.google.com/macros/s/AKfycbzw1817pXkfRIxAbLwGiQNlCeFbX09y5Z7aPh1Bpe4qA32kTXXLC2CjdogaCk7YL46X/exec";
 
 let questionsData = [];
 let currentQuestionIndex = 0;
