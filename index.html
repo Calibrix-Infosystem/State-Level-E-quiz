@@ -1,125 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Quiz Portal | G.E.S. College Of Pharmacy</title>
-    <link rel="shortcut icon" href="logo.ico" type="image/x-icon">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G.E.S. College Of Pharmacy (D.Pharm) Limb, Satara - E-Quiz Portal</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-grid">
+<body>
 
-    <!-- Header -->
-    <header class="app-header">
-        <div class="header-container">
-            <img src="logo.ico" alt="College Logo" class="college-logo">
-            <div class="header-title">
-                <h1>G.E.S. College Of Pharmacy (D.Pharm) Limb, Satara</h1>
-                <p id="test-title-header">State Level E-Quiz Competition</p>
-            </div>
-        </div>
-    </header>
+  <!-- Background White Grid Lines -->
+  <div class="grid-background"></div>
 
-    <!-- Main Container -->
-    <main class="main-wrapper">
-
-        <!-- Countdown / Locked Container -->
-        <section id="registration-card" class="card">
-            <h2>Candidate Registration</h2>
-            <form id="regForm">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="fullName" required placeholder="Enter Full Name">
-                </div>
-                <div class="form-group">
-                    <label>College Name</label>
-                    <input type="text" id="collegeName" required placeholder="Enter College Name">
-                </div>
-                <div class="form-group">
-                    <label>Year Of Study</label>
-                    <select id="yearOfStudy" required>
-                        <option value="">Select Year</option>
-                        <option value="First Year">First Year</option>
-                        <option value="Second Year">Second Year</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Email ID</label>
-                    <input type="email" id="email" required placeholder="name@example.com">
-                </div>
-                <div class="form-group">
-                    <label>WhatsApp Number</label>
-                    <input type="tel" id="whatsapp" pattern="[0-9]{10}" required placeholder="10 Digit Mobile Number">
-                </div>
-
-                <div class="timer-box">
-                    <p>Exam Starts In:</p>
-                    <div id="countdown-timer">00:00:00</div>
-                </div>
-
-                <button type="button" id="startExamBtn" class="btn btn-primary" disabled>Start Exam</button>
-            </form>
-        </section>
-
-        <!-- Exam Portal Window -->
-        <section id="exam-card" class="card hidden">
-            <div class="exam-header">
-                <span id="question-count-badge">Question 1/20</span>
-                <span id="violation-badge">Violations: 0/3</span>
-            </div>
-            
-            <div id="question-container">
-                <h3 id="question-text">Question text goes here...</h3>
-                <div id="options-container" class="options-grid"></div>
-            </div>
-
-            <div class="exam-footer-nav">
-                <button id="prevBtn" class="btn btn-secondary" onclick="navigateQuestion(-1)">Previous</button>
-                <button id="nextBtn" class="btn btn-secondary" onclick="navigateQuestion(1)">Next</button>
-                <button id="submitBtn" class="btn btn-danger" onclick="confirmSubmit()">Submit Exam</button>
-            </div>
-        </section>
-
-        <!-- Scorecard Modal -->
-        <section id="score-card" class="card hidden">
-            <h2>Exam Completed!</h2>
-            <div class="score-details">
-                <p>Marks Obtained: <strong id="res-marks">0</strong></p>
-                <p>Percentage: <strong id="res-percentage">0%</strong></p>
-                <p>Violations Recorded: <strong id="res-violations">0</strong></p>
-            </div>
-
-            <div id="certificate-section" class="hidden">
-                <p class="congrats-msg">🎉 Congratulations! You scored 50% or above.</p>
-                <a href="YOUR_FEEDBACK_FORM_LINK" target="_blank" class="btn btn-success">Fill Feedback & Get Certificate</a>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Surveillance Punishment Overlay -->
-    <div id="punishment-overlay" class="overlay hidden">
-        <div class="overlay-content">
-            <h2 class="warning-text">⚠️ Security Violation Detected!</h2>
-            <p>Exam suspended due to tab-switching/fullscreen exit/screenshot attempt.</p>
-            <p>Exam will resume in: <span id="penalty-timer">60</span> Seconds</p>
-        </div>
+  <!-- Attractive Header -->
+  <header class="navbar">
+    <div class="header-container">
+      <img src="logo.png" alt="College Logo" class="college-logo">
+      <div class="header-titles">
+        <h2>Gourishankar Education Society's</h2>
+        <h1>G.E.S. College Of Pharmacy (D.Pharm) Limb, Satara</h1>
+        <p class="exam-title-badge" id="test-name-display">Loading Exam Details...</p>
+      </div>
     </div>
+  </header>
 
-    <!-- Closed Popup Modal -->
-    <div id="closed-modal" class="overlay hidden">
-        <div class="overlay-content">
-            <h2>Registration Closed!</h2>
-            <p>This exam is currently closed or ended by administrator.</p>
+  <main class="container">
+
+    <!-- Registration / Countdown Panel -->
+    <section id="registration-card" class="card">
+      <h2 class="card-title">Candidate Registration</h2>
+      <div id="status-alert" class="alert hidden"></div>
+
+      <form id="reg-form">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="fullName" required placeholder="Enter Full Name">
         </div>
+        <div class="form-group">
+          <label>College Name</label>
+          <input type="text" id="collegeName" required placeholder="Enter College Name">
+        </div>
+        <div class="form-group">
+          <label>Year Of Study</label>
+          <select id="yearOfStudy" required>
+            <option value="">Select Year</option>
+            <option value="First Year">First Year</option>
+            <option value="Second Year">Second Year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Email ID</label>
+          <input type="email" id="email" required placeholder="Enter Email ID">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp Number</label>
+          <input type="tel" id="whatsapp" required pattern="[0-9]{10}" placeholder="10 Digit WhatsApp Number">
+        </div>
+
+        <!-- Timer Display Area -->
+        <div class="timer-box">
+          <span id="timer-label">Exam Starts In:</span>
+          <div id="countdown-clock">00:00:00</div>
+        </div>
+
+        <button type="button" id="start-exam-btn" class="btn btn-primary" disabled>Start Exam</button>
+      </form>
+    </section>
+
+    <!-- Exam Screen -->
+    <section id="exam-card" class="card hidden">
+      <div class="exam-header">
+        <span class="question-tracker">Question <span id="current-q-num">1</span> of <span id="total-q-num">0</span></span>
+        <span class="surveillance-badge">AI Surveillance Active</span>
+      </div>
+
+      <div class="question-box">
+        <h3 id="question-text">Question content will load here...</h3>
+        <div class="options-container" id="options-container">
+          <!-- Options rendered dynamically -->
+        </div>
+      </div>
+
+      <div class="exam-actions">
+        <button id="prev-btn" class="btn btn-secondary" onclick="prevQuestion()">Previous</button>
+        <button id="next-btn" class="btn btn-primary" onclick="nextQuestion()">Next</button>
+        <button id="submit-btn" class="btn btn-success hidden" onclick="confirmSubmit()">Submit Exam</button>
+      </div>
+    </section>
+
+    <!-- Scorecard & Result Screen -->
+    <section id="result-card" class="card hidden">
+      <h2>Exam Summary</h2>
+      <div class="scorecard">
+        <div class="score-item">
+          <span>Marks Obtained</span>
+          <strong id="final-marks">0</strong>
+        </div>
+        <div class="score-item">
+          <span>Percentage</span>
+          <strong id="final-percentage">0%</strong>
+        </div>
+        <div class="score-item">
+          <span>Violations Recorded</span>
+          <strong id="final-violations" class="text-danger">0</strong>
+        </div>
+      </div>
+
+      <!-- Feedback & Certificate Link -->
+      <div id="certificate-box" class="hidden">
+        <p class="congrats-text">Congratulations! You scored 50% or above.</p>
+        <a href="https://forms.gle/your-feedback-form-link" target="_blank" class="btn btn-certificate">
+          Submit Feedback & Get Certificate
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Lock Modal / Warning Popup -->
+  <div id="warning-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-danger">Security Violation Warning!</h3>
+      <p id="warning-msg">Switching tabs, taking screenshots, or exiting fullscreen is prohibited.</p>
+      <p id="pause-timer" class="hidden">Exam Locked for: <span id="lock-countdown">60</span>s</p>
+      <button class="btn btn-primary" onclick="dismissWarning()">I Understand</button>
     </div>
+  </div>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-        <p>Powered by <strong>Pharma2tech Systems Pvt Ltd</strong></p>
-        <p class="slogan"><em>"Where Pharmacy Meets Technology"</em></p>
-    </footer>
+  <!-- Footer -->
+  <footer>
+    <p>Powered by <strong>Pharma2tech Systems Pvt Ltd</strong></p>
+    <p class="slogan"><em>"Where Pharmacy Meets Technology"</em></p>
+  </footer>
 
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
