@@ -1,196 +1,276 @@
-// Google Apps Script API endpoints
-const FETCH_API_URL = "https://script.google.com/macros/s/AKfycbznXOrazKw3gqB_MkTdsUSi9wDdk1u0DODIAgTRYpp3wFkfZguCJfgt6L8AHGqGa8ng/exec";
-const SUBMIT_API_URL = "https://script.google.com/macros/s/AKfycbzw1817pXkfRIxAbLwGiQNlCeFbX09y5Z7aPh1Bpe4qA32kTXXLC2CjdogaCk7YL46X/exec";
+// Replace with your Google Apps Script Deployed Web App URL
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyj_WgbdmxrfVpmaj9QYmSGvbu3aJvDDEMPNWqbdzdV7IPM6pHgdNgeTM6MDaxtalvK/exec";
 
-let questionsData = [];
-let currentQuestionIndex = 0;
+let controlData = {};
+let questions = [];
+let currentQIndex = 0;
 let userAnswers = {};
 let violationsCount = 0;
 let isExamActive = false;
-let examStartTime = null;
+let isPaused = false;
 
-// Fetch Exam Metadata & Questions
-window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        let response = await fetch(FETCH_API_URL);
-        let data = await response.json();
-
-        if (data.control.linkStatus.toLowerCase() === "closed") {
-            document.getElementById('closed-modal').classList.remove('hidden');
-            return;
-        }
-
-        document.getElementById('test-title-header').innerText = data.control.testName;
-        questionsData = data.questions;
-        examStartTime = new Date(data.control.startTime).getTime();
-
-        startCountdownTimer();
-    } catch (err) {
-        alert("Failed to load exam data. Please check network connection.");
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  fetchControlSettings();
 });
 
-// Countdown Timer Sync IST
-function startCountdownTimer() {
-    let timerInterval = setInterval(() => {
-        let now = new Date().getTime();
-        let distance = examStartTime - now;
+// 1. Fetch Control Panel Settings
+async function fetchControlSettings() {
+  try {
+    const response = await fetch(`${SCRIPT_URL}?action=getControl`);
+    controlData = await response.json();
 
-        if (distance <= 0) {
-            clearInterval(timerInterval);
-            document.getElementById('countdown-timer').innerText = "Exam Started!";
-            document.getElementById('startExamBtn').disabled = false;
-        } else {
-            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            document.getElementById('countdown-timer').innerText = `${hours}h ${minutes}m ${seconds}s`;
-        }
-    }, 1000);
+    document.getElementById("test-name-display").innerText = controlData.testName;
+
+    if (controlData.linkStatus !== "Open") {
+      showAlert("Registration is Closed by Administrator.", "danger");
+      return;
+    }
+
+    startCountdownTimer(controlData.startTime, controlData.endTime);
+  } catch (err) {
+    showAlert("Failed to load exam details. Refresh again.", "danger");
+  }
 }
 
-// Start Exam & Enable Fullscreen
-document.getElementById('startExamBtn').addEventListener('click', () => {
-    if(!document.getElementById('regForm').checkValidity()){
-        alert("Please fill all details correctly!");
-        return;
-    }
-    
-    // Request Fullscreen
-    let elem = document.documentElement;
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen();
+// 2. IST Countdown Clock
+function startCountdownTimer(startStr, endStr) {
+  const timerElem = document.getElementById("countdown-clock");
+  const startBtn = document.getElementById("start-exam-btn");
+
+  const interval = setInterval(() => {
+    const now = new Date();
+    const startTime = new Date(startStr);
+    const endTime = new Date(endStr);
+
+    if (now >= endTime) {
+      clearInterval(interval);
+      timerElem.innerText = "Exam Expired";
+      showAlert("Exam time window has expired.", "danger");
+      return;
     }
 
-    document.getElementById('registration-card').classList.add('hidden');
-    document.getElementById('exam-card').classList.remove('hidden');
+    const diff = startTime - now;
+
+    if (diff <= 0) {
+      clearInterval(interval);
+      timerElem.innerText = "Exam is Live!";
+      startBtn.disabled = false;
+      startBtn.onclick = startExamProcess;
+    } else {
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      timerElem.innerText = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+  }, 1000);
+}
+
+function pad(n) { return n < 10 ? '0' + n : n; }
+
+// 3. Start Exam & Fetch Questions
+async function startExamProcess() {
+  if (!validateForm()) return;
+
+  // Request Fullscreen
+  enableFullScreen();
+
+  // Load Questions
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=getQuestions`);
+    questions = await res.json();
+
+    if (!questions.length) {
+      alert("No questions found.");
+      return;
+    }
+
+    document.getElementById("registration-card").classList.add("hidden");
+    document.getElementById("exam-card").classList.remove("hidden");
+    document.getElementById("total-q-num").innerText = questions.length;
+
     isExamActive = true;
-    
     setupSurveillance();
     renderQuestion();
-});
 
-// Render Questions
+  } catch (err) {
+    alert("Error fetching questions.");
+  }
+}
+
 function renderQuestion() {
-    let q = questionsData[currentQuestionIndex];
-    document.getElementById('question-count-badge').innerText = `Question ${currentQuestionIndex + 1}/${questionsData.length}`;
-    document.getElementById('question-text').innerText = `${q.srNo}. ${q.question}`;
+  const q = questions[currentQIndex];
+  document.getElementById("current-q-num").innerText = currentQIndex + 1;
+  document.getElementById("question-text").innerText = `${q.srNo}. ${q.question}`;
 
-    let optionsDiv = document.getElementById('options-container');
-    optionsDiv.innerHTML = '';
+  const container = document.getElementById("options-container");
+  container.innerHTML = "";
 
-    let optionKeys = ['A', 'B', 'C', 'D'];
-    q.options.forEach((optText, index) => {
-        let btn = document.createElement('button');
-        btn.className = `option-btn ${userAnswers[q.srNo] === optionKeys[index] ? 'selected' : ''}`;
-        btn.innerText = `${optionKeys[index]}. ${optText}`;
-        btn.onclick = () => {
-            userAnswers[q.srNo] = optionKeys[index];
-            renderQuestion();
-        };
-        optionsDiv.appendChild(btn);
-    });
+  const options = ['A', 'B', 'C', 'D'];
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    if (userAnswers[currentQIndex] === opt) btn.classList.add("selected");
+    btn.innerText = `${opt}) ${q['option' + opt]}`;
+    btn.onclick = () => {
+      userAnswers[currentQIndex] = opt;
+      renderQuestion();
+    };
+    container.appendChild(btn);
+  });
+
+  document.getElementById("prev-btn").disabled = currentQIndex === 0;
+  if (currentQIndex === questions.length - 1) {
+    document.getElementById("next-btn").classList.add("hidden");
+    document.getElementById("submit-btn").classList.remove("hidden");
+  } else {
+    document.getElementById("next-btn").classList.remove("hidden");
+    document.getElementById("submit-btn").classList.add("hidden");
+  }
 }
 
-function navigateQuestion(step) {
-    if (currentQuestionIndex + step >= 0 && currentQuestionIndex + step < questionsData.length) {
-        currentQuestionIndex += step;
-        renderQuestion();
-    }
-}
+function nextQuestion() { if (currentQIndex < questions.length - 1) { currentQIndex++; renderQuestion(); } }
+function prevQuestion() { if (currentQIndex > 0) { currentQIndex--; renderQuestion(); } }
 
-// AI Surveillance Logic
+// 4. Advanced AI Surveillance System
 function setupSurveillance() {
-    // Disable PrintScreen / Keys
-    document.addEventListener('keyup', (e) => {
-        if (e.key === 'PrintScreen') {
-            triggerViolation("Screenshot Detected");
-        }
-    });
-
-    // Detect Tab Switching
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden && isExamActive) {
-            triggerViolation("Tab Switching Detected");
-        }
-    });
-
-    // Detect Fullscreen Exit
-    document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement && isExamActive) {
-            triggerViolation("Fullscreen Exit Detected");
-        }
-    });
-}
-
-function triggerViolation(reason) {
-    violationsCount++;
-    document.getElementById('violation-badge').innerText = `Violations: ${violationsCount}/3`;
-
-    if (violationsCount >= 3) {
-        applyPunishment();
-    } else {
-        alert(`Warning ${violationsCount}/3: ${reason}! Don't switch tab or exit fullscreen.`);
+  // Prevent Right Click & Screenshot Key Combos
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  document.addEventListener("keydown", e => {
+    if (e.key === "PrintScreen" || (e.ctrlKey && e.key === "p") || (e.metaKey && e.shiftKey)) {
+      e.preventDefault();
+      triggerViolation("Screenshot or Print action blocked!");
     }
+  });
+
+  // Track Tab Switch / Window Blur
+  window.addEventListener("blur", () => {
+    if (isExamActive) triggerViolation("Tab switch or Window exit detected!");
+  });
+
+  // Fullscreen exit tracking
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement && isExamActive) {
+      triggerViolation("Exited Fullscreen mode!");
+    }
+  });
 }
 
-function applyPunishment() {
-    document.getElementById('punishment-overlay').classList.remove('hidden');
-    let penaltyTime = 60;
-    let timerElem = document.getElementById('penalty-timer');
+function triggerViolation(msg) {
+  if (isPaused) return;
+  violationsCount++;
+  const modal = document.getElementById("warning-modal");
+  document.getElementById("warning-msg").innerText = `${msg} Violation count: ${violationsCount}/3`;
+  modal.classList.remove("hidden");
 
-    let penaltyInterval = setInterval(() => {
-        penaltyTime--;
-        timerElem.innerText = penaltyTime;
-        if (penaltyTime <= 0) {
-            clearInterval(penaltyInterval);
-            document.getElementById('punishment-overlay').classList.add('hidden');
-            violationsCount = 0; // Reset after punishment
-            
-            // Re-request fullscreen
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            }
-        }
-    }, 1000);
+  if (violationsCount >= 3) {
+    pauseExamForPenalty();
+  }
 }
 
-// Submit Response to Apps Script
+function pauseExamForPenalty() {
+  isPaused = true;
+  let lockTime = 60;
+  const pElem = document.getElementById("pause-timer");
+  const countdown = document.getElementById("lock-countdown");
+  pElem.classList.remove("hidden");
+
+  const timer = setInterval(() => {
+    lockTime--;
+    countdown.innerText = lockTime;
+    if (lockTime <= 0) {
+      clearInterval(timer);
+      pElem.classList.add("hidden");
+      dismissWarning();
+      isPaused = false;
+      enableFullScreen();
+    }
+  }, 1000);
+}
+
+function dismissWarning() {
+  if (!isPaused) {
+    document.getElementById("warning-modal").classList.add("hidden");
+    enableFullScreen();
+  }
+}
+
+function enableFullScreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+// 5. Exam Submission
 async function confirmSubmit() {
-    if (confirm("Are you sure you want to submit the exam?")) {
-        isExamActive = false;
+  if (!confirm("Are you sure you want to submit the exam?")) return;
 
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
+  isExamActive = false;
+  if (document.fullscreenElement) document.exitFullscreen();
 
-        let payload = {
-            fullName: document.getElementById('fullName').value,
-            collegeName: document.getElementById('collegeName').value,
-            yearOfStudy: document.getElementById('yearOfStudy').value,
-            email: document.getElementById('email').value,
-            whatsapp: document.getElementById('whatsapp').value,
-            answers: userAnswers,
-            violations: violationsCount
-        };
+  // Score Calculation
+  let marks = 0;
+  questions.forEach((q, idx) => {
+    if (userAnswers[idx] === q.answer) marks++;
+  });
 
-        let response = await fetch(SUBMIT_API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
+  const percentage = ((marks / questions.length) * 100).toFixed(2);
 
-        let result = await response.json();
+  const payload = {
+    fullName: document.getElementById("fullName").value,
+    collegeName: document.getElementById("collegeName").value,
+    yearOfStudy: document.getElementById("yearOfStudy").value,
+    email: document.getElementById("email").value,
+    whatsapp: document.getElementById("whatsapp").value,
+    marks: marks,
+    totalQuestions: questions.length,
+    percentage: percentage,
+    violations: violationsCount
+  };
 
-        // Render Scorecard
-        document.getElementById('exam-card').classList.add('hidden');
-        document.getElementById('score-card').classList.remove('hidden');
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
 
-        document.getElementById('res-marks').innerText = `${result.score}/${result.totalQuestions}`;
-        document.getElementById('res-percentage').innerText = `${result.percentage}%`;
-        document.getElementById('res-violations').innerText = violationsCount;
-
-        if (parseFloat(result.percentage) >= 50) {
-            document.getElementById('certificate-section').classList.remove('hidden');
-        }
+    if (result.status === "ALREADY_SUBMITTED") {
+      alert("You have already submitted this exam!");
+      location.reload();
+      return;
     }
+
+    // Display Result & Scorecard
+    document.getElementById("exam-card").classList.add("hidden");
+    document.getElementById("result-card").classList.remove("hidden");
+
+    document.getElementById("final-marks").innerText = `${marks} / ${questions.length}`;
+    document.getElementById("final-percentage").innerText = `${percentage}%`;
+    document.getElementById("final-violations").innerText = violationsCount;
+
+    if (parseFloat(percentage) >= 50) {
+      document.getElementById("certificate-box").classList.remove("hidden");
+    }
+
+  } catch (err) {
+    alert("Error submitting exam. Please check internet connection.");
+  }
+}
+
+function validateForm() {
+  const fields = ["fullName", "collegeName", "yearOfStudy", "email", "whatsapp"];
+  for (let f of fields) {
+    if (!document.getElementById(f).value) {
+      alert("Please fill all candidate registration details.");
+      return false;
+    }
+  }
+  return true;
+}
+
+function showAlert(msg, type) {
+  const alert = document.getElementById("status-alert");
+  alert.innerText = msg;
+  alert.className = `alert alert-${type}`;
+  alert.classList.remove("hidden");
 }
