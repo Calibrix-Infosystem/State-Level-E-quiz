@@ -1,0 +1,184 @@
+:root {
+    --primary-color: #0d6efd;
+    --dark-blue: #0b3860;
+    --light-bg: #f8f9fa;
+    --grid-color: #e5e7eb;
+    --danger-color: #dc3545;
+    --success-color: #198754;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #ffffff;
+    user-select: none; /* Disable copy/select text */
+}
+
+/* White Grid Pattern Background */
+.bg-grid {
+    background-color: #ffffff;
+    background-image: linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+                      linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+/* Header UI */
+.app-header {
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-color));
+    color: white;
+    padding: 15px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.college-logo {
+    height: 60px;
+    width: 60px;
+    border-radius: 50%;
+    background: white;
+    padding: 2px;
+}
+
+.header-title h1 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.header-title p {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Main Container & Cards */
+.main-wrapper {
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 0 15px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+/* Timer Display */
+.timer-box {
+    text-align: center;
+    background: #eef5ff;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+#countdown-timer {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-primary { background: var(--primary-color); color: white; }
+.btn-primary:disabled { background: #cccccc; cursor: not-allowed; }
+.btn-secondary { background: #6c757d; color: white; width: auto; }
+.btn-danger { background: var(--danger-color); color: white; width: auto; }
+.btn-success { background: var(--success-color); color: white; }
+
+.hidden { display: none !important; }
+
+/* Exam Options UI */
+.options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.option-btn {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fdfdfd;
+    cursor: pointer;
+    text-align: left;
+}
+
+.option-btn.selected {
+    background: #d0e2ff;
+    border-color: var(--primary-color);
+}
+
+.exam-footer-nav {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* AI Surveillance Overlays */
+.overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.overlay-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.warning-text { color: var(--danger-color); }
+
+/* Footer */
+.app-footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    background: #ffffff;
+    border-top: 1px solid #eee;
+}
+
+.app-footer p { margin: 2px; }
+.app-footer .slogan { font-size: 0.85rem; color: #555; }
